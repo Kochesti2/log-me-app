@@ -1,12 +1,23 @@
 // src/app/logs/page.tsx
-"use client";
+'use client';
 
-import { useEffect, useState, useCallback } from "react";
-import type { LogEntry, Direction } from "@/lib/types";
-import { getLogs, createLog, deleteLog } from "@/lib/api/logs";
+import { IconDoorEnter, IconDoorExit } from '@tabler/icons-react';
+import { useCallback, useEffect, useState } from 'react';
+import type { Direction, LogEntry } from '@/lib/types';
+import { createLog, deleteLog, getLogs } from '@/lib/api/logs';
+import { FieldGroup, FieldLegend, FieldSeparator, FieldSet } from '@/components/ui/field';
+import { Item } from '@/components/ui/item';
+import dayjs from 'dayjs';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
-const WS_URL =
-  process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:5000/ws/logs";
+const WS_URL = process.env.NEXT_PUBLIC_WS_URL ?? 'ws://localhost:5000/ws/logs';
 
 export default function LogsPage() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -17,8 +28,8 @@ export default function LogsPage() {
     barcode: string;
     direction: Direction;
   }>({
-    barcode: "",
-    direction: "INBOUND",
+    barcode: '',
+    direction: 'INBOUND',
   });
 
   const loadLogs = useCallback(async () => {
@@ -29,7 +40,7 @@ export default function LogsPage() {
       setLogs(data);
     } catch (err: any) {
       console.error(err);
-      setError(err.message ?? "Errore caricamento log");
+      setError(err.message ?? 'Errore caricamento log');
     } finally {
       setLoadingList(false);
     }
@@ -43,27 +54,27 @@ export default function LogsPage() {
     const ws = new WebSocket(WS_URL);
 
     ws.onopen = () => {
-      console.log("WebSocket logs connesso");
+      console.log('WebSocket logs connesso');
     };
 
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        if (data.type === "logs_changed") {
-          console.log("Notifica logs_changed, ricarico lista log");
+        if (data.type === 'logs_changed') {
+          console.log('Notifica logs_changed, ricarico lista log');
           void loadLogs();
         }
       } catch (err) {
-        console.error("Errore parsing messaggio WS:", err);
+        console.error('Errore parsing messaggio WS:', err);
       }
     };
 
     ws.onerror = (event) => {
-      console.error("WebSocket error:", event);
+      console.error('WebSocket error:', event);
     };
 
     ws.onclose = () => {
-      console.log("WebSocket logs chiuso");
+      console.log('WebSocket logs chiuso');
     };
 
     // cleanup
@@ -72,9 +83,7 @@ export default function LogsPage() {
     };
   }, [loadLogs]);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({
       ...prev,
@@ -87,12 +96,12 @@ export default function LogsPage() {
     try {
       setError(null);
       await createLog(form);
-      setForm({ barcode: "", direction: "INBOUND" });
+      setForm({ barcode: '', direction: 'INBOUND' });
       // opzionale: potresti anche non ricaricare qui, dato che il trigger/WS lo farà
       await loadLogs();
     } catch (err: any) {
       console.error(err);
-      setError(err.message ?? "Errore creazione log");
+      setError(err.message ?? 'Errore creazione log');
     }
   };
 
@@ -103,76 +112,48 @@ export default function LogsPage() {
       await loadLogs();
     } catch (err: any) {
       console.error(err);
-      setError(err.message ?? "Errore eliminazione log");
+      setError(err.message ?? 'Errore eliminazione log');
     }
   };
 
   return (
-    <main style={{ padding: "2rem" }}>
-      <h1>Log timbrature</h1>
-
-      <section style={{ marginBottom: "2rem" }}>
-        <h2>Nuova timbratura</h2>
-        <form
-          onSubmit={handleSubmit}
-          style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}
-        >
-          <input
-            name="barcode"
-            placeholder="Barcode"
-            value={form.barcode}
-            onChange={handleChange}
-          />
-          <select
-            name="direction"
-            value={form.direction}
-            onChange={handleChange}
-          >
-            <option value="INBOUND">INBOUND</option>
-            <option value="OUTBOUND">OUTBOUND</option>
-          </select>
-          <button type="submit">Registra</button>
-        </form>
-        {error && (
-          <p style={{ color: "red", marginTop: "0.5rem" }}>{error}</p>
-        )}
-      </section>
-
-      <section>
-        <h2>Ultime timbrature</h2>
-        {loadingList ? (
-          <p>Caricamento...</p>
-        ) : logs.length === 0 ? (
-          <p>Nessun log.</p>
-        ) : (
-          <table border={1} cellPadding={6}>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Barcode</th>
-                <th>Direction</th>
-                <th>Event Time</th>
-                <th>Azioni</th>
-              </tr>
-            </thead>
-            <tbody>
-              {logs.map((l) => (
-                <tr key={l.id}>
-                  <td>{l.id}</td>
-                  <td>{l.barcode}</td>
-                  <td>{l.direction}</td>
-                  <td>{l.event_time}</td>
-                  <td>
-                    <button onClick={() => handleDelete(l.id)}>
-                      Elimina
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </section>
+    <main style={{ padding: '2rem' }}>
+      <FieldGroup>
+        <FieldSet>
+          <FieldLegend>Ultimi LOG</FieldLegend>
+          <FieldSeparator />
+          <Item variant="outline">
+            {loadingList ? (
+              <p>Caricamento...</p>
+            ) : logs.length === 0 ? (
+              <p>Nessun log.</p>
+            ) : (
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[100px]">ID</TableHead>
+                      <TableHead>Barcode</TableHead>
+                      <TableHead>Direction</TableHead>
+                      <TableHead>Event Time</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {logs.map((l) => (
+                      <TableRow key={l.id}>
+                        <TableCell>{l.id}</TableCell>
+                        <TableCell>{l.barcode}</TableCell>
+                        {l.direction === 'INBOUND' ? <IconDoorEnter /> : <IconDoorExit />}
+                        <TableCell>{dayjs(l.event_time).format('HH:mm')}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </>
+            )}
+          </Item>
+        </FieldSet>
+      </FieldGroup>
     </main>
   );
 }

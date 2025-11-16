@@ -1,9 +1,33 @@
 // src/app/users/page.tsx
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import type { User } from "@/lib/types";
-import { getUsers, createUser, deleteUser } from "@/lib/api/users";
+import { useEffect, useState } from 'react';
+import type { User } from '@/lib/types';
+import { createUser, deleteUser, getUsers } from '@/lib/api/users';
+import { Item } from '@/components/ui/item';
+import { Field, FieldGroup, FieldLegend, FieldSeparator, FieldSet } from '@/components/ui/field';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -12,10 +36,12 @@ export default function UsersPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [form, setForm] = useState({
-    barcode: "",
-    nome: "",
-    cognome: "",
+    barcode: '',
+    nome: '',
+    cognome: '',
   });
+
+  const [open, setOpen] = useState(false);
 
   const loadUsers = async () => {
     try {
@@ -25,7 +51,7 @@ export default function UsersPage() {
       setUsers(data);
     } catch (err: any) {
       console.error(err);
-      setError(err.message ?? "Errore caricamento utenti");
+      setError(err.message ?? 'Errore caricamento utenti');
     } finally {
       setLoadingList(false);
     }
@@ -35,26 +61,28 @@ export default function UsersPage() {
     void loadUsers();
   }, []);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSaving(true);
     try {
       setSaving(true);
       setError(null);
       await createUser(form);
-      setForm({ barcode: "", nome: "", cognome: "" });
+      setOpen(false);
+      setForm({ barcode: '', nome: '', cognome: '' });
       await loadUsers();
     } catch (err: any) {
       console.error(err);
-      setError(err.message ?? "Errore salvataggio utente");
+      setError(err.message ?? 'Errore salvataggio utente');
+      toast.error('Errore salvataggio utente');
     } finally {
       setSaving(false);
+      toast.success('Operazione eseguita con successo!');
     }
   };
 
@@ -65,80 +93,138 @@ export default function UsersPage() {
       await loadUsers();
     } catch (err: any) {
       console.error(err);
-      setError(err.message ?? "Errore eliminazione utente");
+      setError(err.message ?? 'Errore eliminazione utente');
     }
   };
 
   return (
-    <main style={{ padding: "2rem" }}>
-      <h1>Utenti</h1>
+    <main style={{ padding: '2rem' }}>
+      {/*<h1>Utenti</h1>*/}
 
-      <section style={{ marginBottom: "2rem" }}>
-        <h2>Nuovo utente</h2>
-        <form
-          onSubmit={handleSubmit}
-          style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}
-        >
-          <input
-            name="barcode"
-            placeholder="Barcode (13 cifre)"
-            value={form.barcode}
-            onChange={handleChange}
-          />
-          <input
-            name="nome"
-            placeholder="Nome"
-            value={form.nome}
-            onChange={handleChange}
-          />
-          <input
-            name="cognome"
-            placeholder="Cognome"
-            value={form.cognome}
-            onChange={handleChange}
-          />
-          <button type="submit" disabled={saving}>
-            {saving ? "Salvataggio..." : "Salva"}
-          </button>
-        </form>
-        {error && (
-          <p style={{ color: "red", marginTop: "0.5rem" }}>{error}</p>
-        )}
-      </section>
+      {/*<section style={{ marginBottom: '2rem' }}>*/}
+      {/*  <h2>Nuovo utente</h2>*/}
+      {/*  <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>*/}
+      {/*    <input*/}
+      {/*      name="barcode"*/}
+      {/*      placeholder="Barcode (13 cifre)"*/}
+      {/*      value={form.barcode}*/}
+      {/*      onChange={handleChange}*/}
+      {/*    />*/}
+      {/*    <input name="nome" placeholder="Nome" value={form.nome} onChange={handleChange} />*/}
+      {/*    <input*/}
+      {/*      name="cognome"*/}
+      {/*      placeholder="Cognome"*/}
+      {/*      value={form.cognome}*/}
+      {/*      onChange={handleChange}*/}
+      {/*    />*/}
+      {/*    <button type="submit" disabled={saving}>*/}
+      {/*      {saving ? 'Salvataggio...' : 'Salva'}*/}
+      {/*    </button>*/}
+      {/*  </form>*/}
+      {/*  {error && <p style={{ color: 'red', marginTop: '0.5rem' }}>{error}</p>}*/}
+      {/*</section>*/}
 
-      <section>
-        <h2>Lista utenti</h2>
-        {loadingList ? (
-          <p>Caricamento...</p>
-        ) : users.length === 0 ? (
-          <p>Nessun utente trovato.</p>
-        ) : (
-          <table border={1} cellPadding={6}>
-            <thead>
-              <tr>
-                <th>Barcode</th>
-                <th>Nome</th>
-                <th>Cognome</th>
-                <th>Azioni</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr key={u.barcode}>
-                  <td>{u.barcode}</td>
-                  <td>{u.nome}</td>
-                  <td>{u.cognome}</td>
-                  <td>
-                    <button onClick={() => handleDelete(u.barcode)}>
-                      Elimina
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </section>
+      <FieldGroup style={{ marginTop: '20px', marginBottom: '60px' }}>
+        <FieldSet>
+          <FieldLegend>Nuovo Dipendente</FieldLegend>
+          <FieldSeparator />
+        </FieldSet>
+        <Field orientation="horizontal">
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button type="button" onClick={() => setOpen(true)}>
+                Aggiungi +
+              </Button>
+            </DialogTrigger>
+
+            <DialogContent className="sm:max-w-[425px]">
+              {/* Metti tutto dentro una form */}
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <DialogHeader>
+                  <DialogTitle>Nuovo Dipendente</DialogTitle>
+                  <DialogDescription>Iniziamo a censire il nuovo dipendente.</DialogDescription>
+                </DialogHeader>
+
+                <div className="grid gap-4">
+                  <div className="grid gap-3">
+                    <Label htmlFor="nome-1">Nome</Label>
+                    <Input id="name-1" name="nome" value={form.nome} onChange={handleChange} />
+                  </div>
+                  <div className="grid gap-3">
+                    <Label htmlFor="cognome-1">Cognome</Label>
+                    <Input
+                      id="cognome-1"
+                      name="cognome"
+                      value={form.cognome}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div className="grid gap-3">
+                    <Label htmlFor="barcode-1">Barcode</Label>
+                    <Input
+                      id="barcode-1"
+                      name="barcode"
+                      value={form.barcode}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+
+                <DialogFooter>
+                  <DialogClose asChild>
+                    <Button type="button" variant="outline">
+                      Chiudi
+                    </Button>
+                  </DialogClose>
+
+                  <Button type="submit" disabled={saving}>
+                    {saving ? 'Salvataggio...' : 'Salva'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </Field>
+      </FieldGroup>
+
+      <FieldGroup>
+        <FieldSet>
+          <FieldLegend>Lista Dipendenti</FieldLegend>
+          <FieldSeparator />
+          <Item variant="outline">
+            {loadingList ? (
+              <p>Caricamento...</p>
+            ) : users.length === 0 ? (
+              <p>Nessun utente trovato.</p>
+            ) : (
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[100px]">Barcode</TableHead>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Cognome</TableHead>
+                      <TableHead>Azioni</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {users.map((u) => (
+                      <TableRow key={u.barcode}>
+                        <TableCell>{u.barcode}</TableCell>
+                        <TableCell>{u.nome}</TableCell>
+                        <TableCell>{u.cognome}</TableCell>
+                        <TableCell>
+                          <Button onClick={() => handleDelete(u.barcode)}>Elimina</Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </>
+            )}
+          </Item>
+        </FieldSet>
+      </FieldGroup>
     </main>
   );
 }
