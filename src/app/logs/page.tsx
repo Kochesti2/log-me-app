@@ -29,7 +29,7 @@ export default function LogsPage() {
     direction: Direction;
   }>({
     barcode: '',
-    direction: 'INBOUND',
+    direction: 'CHECKIN',
   });
 
   const loadLogs = useCallback(async () => {
@@ -96,7 +96,7 @@ export default function LogsPage() {
     try {
       setError(null);
       await createLog(form);
-      setForm({ barcode: '', direction: 'INBOUND' });
+      setForm({ barcode: '', direction: 'CHECKIN' });
       // opzionale: potresti anche non ricaricare qui, dato che il trigger/WS lo farà
       await loadLogs();
     } catch (err: any) {
@@ -126,7 +126,7 @@ export default function LogsPage() {
             {loadingList ? (
               <p>Caricamento...</p>
             ) : logs.length === 0 ? (
-              <p>Nessun log.</p>
+              <p>Non ci sono log da visualizzare</p>
             ) : (
               <>
                 <Table>
@@ -143,7 +143,7 @@ export default function LogsPage() {
                       <TableRow key={l.id}>
                         <TableCell>{l.id}</TableCell>
                         <TableCell>{l.barcode}</TableCell>
-                        {l.direction === 'INBOUND' ? <IconDoorEnter /> : <IconDoorExit />}
+                        {l.direction === 'CHECKIN' ? <IconDoorEnter /> : <IconDoorExit />}
                         <TableCell>{dayjs(l.event_time).format('HH:mm')}</TableCell>
                       </TableRow>
                     ))}

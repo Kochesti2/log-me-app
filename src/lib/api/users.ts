@@ -1,9 +1,9 @@
 // src/lib/api/users.ts
-import { apiFetch } from "./client";
-import type { User } from "../types";
+import { apiFetch } from './client';
+import type { Ean, User } from '../types';
 
 export async function getUsers(): Promise<User[]> {
-  return apiFetch<User[]>("/users");
+  return apiFetch<User[]>('/users');
 }
 
 export interface CreateUserPayload {
@@ -13,14 +13,18 @@ export interface CreateUserPayload {
 }
 
 export async function createUser(payload: CreateUserPayload): Promise<void> {
-  await apiFetch<unknown>("/users", {
-    method: "POST",
+  await apiFetch<unknown>('/users', {
+    method: 'POST',
     body: JSON.stringify(payload),
   });
 }
 
 export async function deleteUser(barcode: string): Promise<void> {
   await apiFetch<unknown>(`/users/${barcode}`, {
-    method: "DELETE",
+    method: 'DELETE',
   });
+}
+
+export async function getNewEan(): Promise<Ean> {
+  return await apiFetch<Ean>(`/users/newean`);
 }

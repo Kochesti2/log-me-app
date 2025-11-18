@@ -6,7 +6,7 @@ export default function HomePage() {
     <>
       <div>
         <Item variant="outline">
-          <p>ciao</p>
+          <p>Hello this is home page.</p>
         </Item>
       </div>
     </>

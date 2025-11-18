@@ -2,8 +2,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { User } from '@/lib/types';
-import { createUser, deleteUser, getUsers } from '@/lib/api/users';
+import type { Ean, User } from '@/lib/types';
+import { createUser, deleteUser, getNewEan, getUsers } from '@/lib/api/users';
 import { Item } from '@/components/ui/item';
 import { Field, FieldGroup, FieldLegend, FieldSeparator, FieldSet } from '@/components/ui/field';
 import {
@@ -34,6 +34,7 @@ export default function UsersPage() {
   const [loadingList, setLoadingList] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [newEan, setNewEan] = useState<Ean | null>(null);
 
   const [form, setForm] = useState({
     barcode: '',
@@ -42,6 +43,25 @@ export default function UsersPage() {
   });
 
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      const loadData = async () => {
+        setNewEan(null);
+        handelGetEan();
+      };
+      loadData();
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (newEan?.new_ean) {
+      setForm((prev) => ({
+        ...prev,
+        barcode: newEan.new_ean,
+      }));
+    }
+  }, [newEan]);
 
   const loadUsers = async () => {
     try {
@@ -94,6 +114,16 @@ export default function UsersPage() {
     } catch (err: any) {
       console.error(err);
       setError(err.message ?? 'Errore eliminazione utente');
+    }
+  };
+
+  const handelGetEan = async () => {
+    try {
+      const data = await getNewEan();
+      setNewEan(data ?? null);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message ?? 'Errore, non si reisce a generare un ean nuovo');
     }
   };
 
@@ -161,12 +191,7 @@ export default function UsersPage() {
                   </div>
                   <div className="grid gap-3">
                     <Label htmlFor="barcode-1">Barcode</Label>
-                    <Input
-                      id="barcode-1"
-                      name="barcode"
-                      value={form.barcode}
-                      onChange={handleChange}
-                    />
+                    <Input id="barcode-1" name="barcode" value={form.barcode} disabled={true} />
                   </div>
                 </div>
 
