@@ -39,7 +39,6 @@ export default function LogsPage() {
       const data = await getLogs();
       setLogs(data);
     } catch (err: any) {
-      console.error(err);
       setError(err.message ?? 'Errore caricamento log');
     } finally {
       setLoadingList(false);
@@ -53,24 +52,15 @@ export default function LogsPage() {
     // connessione websocket
     const ws = new WebSocket(WS_URL);
 
-    ws.onopen = () => {
-      console.log('WebSocket logs connesso');
-    };
-
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
         if (data.type === 'logs_changed') {
-          console.log('Notifica logs_changed, ricarico lista log');
           void loadLogs();
         }
       } catch (err) {
         console.error('Errore parsing messaggio WS:', err);
       }
-    };
-
-    ws.onerror = (event) => {
-      console.error('WebSocket error:', event);
     };
 
     ws.onclose = () => {
@@ -100,7 +90,6 @@ export default function LogsPage() {
       // opzionale: potresti anche non ricaricare qui, dato che il trigger/WS lo farà
       await loadLogs();
     } catch (err: any) {
-      console.error(err);
       setError(err.message ?? 'Errore creazione log');
     }
   };
@@ -143,7 +132,9 @@ export default function LogsPage() {
                       <TableRow key={l.id}>
                         <TableCell>{l.id}</TableCell>
                         <TableCell>{l.barcode}</TableCell>
-                        {l.direction === 'CHECKIN' ? <IconDoorEnter /> : <IconDoorExit />}
+                        <TableCell>
+                          {l.direction === 'CHECKIN' ? <IconDoorEnter /> : <IconDoorExit />}
+                        </TableCell>
                         <TableCell>{dayjs(l.event_time).format('HH:mm')}</TableCell>
                       </TableRow>
                     ))}

@@ -17,6 +17,16 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Table,
   TableBody,
   TableCell,
@@ -43,6 +53,8 @@ export default function UsersPage() {
   });
 
   const [open, setOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -70,7 +82,6 @@ export default function UsersPage() {
       const data = await getUsers();
       setUsers(data);
     } catch (err: any) {
-      console.error(err);
       setError(err.message ?? 'Errore caricamento utenti');
     } finally {
       setLoadingList(false);
@@ -97,7 +108,6 @@ export default function UsersPage() {
       setForm({ barcode: '', nome: '', cognome: '' });
       await loadUsers();
     } catch (err: any) {
-      console.error(err);
       setError(err.message ?? 'Errore salvataggio utente');
       toast.error('Errore salvataggio utente');
     } finally {
@@ -106,14 +116,23 @@ export default function UsersPage() {
     }
   };
 
-  const handleDelete = async (barcode: string) => {
-    if (!window.confirm(`Eliminare utente ${barcode}?`)) return;
+  const handleDelete = (barcode: string) => {
+    setUserToDelete(barcode);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!userToDelete) return;
     try {
-      await deleteUser(barcode);
+      await deleteUser(userToDelete);
+      toast.success('Utente eliminato con successo!');
       await loadUsers();
     } catch (err: any) {
-      console.error(err);
       setError(err.message ?? 'Errore eliminazione utente');
+      toast.error('Errore eliminazione utente');
+    } finally {
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
     }
   };
 
@@ -122,7 +141,6 @@ export default function UsersPage() {
       const data = await getNewEan();
       setNewEan(data ?? null);
     } catch (err: any) {
-      console.error(err);
       setError(err.message ?? 'Errore, non si reisce a generare un ean nuovo');
     }
   };
@@ -250,6 +268,27 @@ export default function UsersPage() {
           </Item>
         </FieldSet>
       </FieldGroup>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Conferma eliminazione</AlertDialogTitle>
+            <AlertDialogDescription>
+              Sei sicuro di voler eliminare l'utente con barcode <strong>{userToDelete}</strong>?
+              Questa azione non può essere annullata.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Elimina
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   );
 }

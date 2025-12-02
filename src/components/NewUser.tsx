@@ -16,7 +16,6 @@ import {
 } from '@/components/ui/card';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { useEffect } from 'react';
 
 const formSchema = z.object({
   username: z
@@ -50,10 +49,6 @@ export function NewUser() {
       } as React.CSSProperties,
     });
   }
-
-  useEffect(() => {
-    console.log('ci sono');
-  }, []);
 
   return (
     <Card className="w-full sm:max-w-md">
