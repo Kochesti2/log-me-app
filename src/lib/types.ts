@@ -3,6 +3,7 @@ export interface User {
   barcode: string;
   nome: string;
   cognome: string;
+  email: string;
 }
 
 export type Direction = 'CHECKIN' | 'CHECKOUT';

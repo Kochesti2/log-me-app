@@ -10,6 +10,7 @@ export interface CreateUserPayload {
   barcode: string;
   nome: string;
   cognome: string;
+  email: string;
 }
 
 export async function createUser(payload: CreateUserPayload): Promise<void> {
@@ -22,6 +23,13 @@ export async function createUser(payload: CreateUserPayload): Promise<void> {
 export async function deleteUser(barcode: string): Promise<void> {
   await apiFetch<unknown>(`/users/${barcode}`, {
     method: 'DELETE',
+  });
+}
+
+export async function sendBarcodeToUser(barcode: string, email: string): Promise<void> {
+  await apiFetch<unknown>('/users/send_barcode', {
+    method: 'POST',
+    body: JSON.stringify({ barcode: barcode, email: email }),
   });
 }
 

@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import type { Ean, User } from '@/lib/types';
-import { createUser, deleteUser, getNewEan, getUsers } from '@/lib/api/users';
+import { createUser, deleteUser, getNewEan, getUsers, sendBarcodeToUser } from '@/lib/api/users';
 import { Item } from '@/components/ui/item';
 import { Field, FieldGroup, FieldLegend, FieldSeparator, FieldSet } from '@/components/ui/field';
 import {
@@ -50,11 +50,14 @@ export default function UsersPage() {
     barcode: '',
     nome: '',
     cognome: '',
+    email: '',
   });
 
   const [open, setOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [resendDialogOpen, setResendDialogOpen] = useState(false);
+  const [userToResend, setUserToResend] = useState<User | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -105,7 +108,7 @@ export default function UsersPage() {
       setError(null);
       await createUser(form);
       setOpen(false);
-      setForm({ barcode: '', nome: '', cognome: '' });
+      setForm({ barcode: '', nome: '', cognome: '', email: '' });
       await loadUsers();
     } catch (err: any) {
       setError(err.message ?? 'Errore salvataggio utente');
@@ -119,6 +122,11 @@ export default function UsersPage() {
   const handleDelete = (barcode: string) => {
     setUserToDelete(barcode);
     setDeleteDialogOpen(true);
+  };
+
+  const handleResend = (user: User) => {
+    setUserToResend(user);
+    setResendDialogOpen(true);
   };
 
   const confirmDelete = async () => {
@@ -136,6 +144,21 @@ export default function UsersPage() {
     }
   };
 
+  const confirmResend = async () => {
+    if (!userToResend) return;
+    try {
+      await sendBarcodeToUser(userToResend.barcode, userToResend.email);
+      toast.success('Barcode mandato con successo!');
+      await loadUsers();
+    } catch (err: any) {
+      setError(err.message ?? 'Errore invio barcode');
+      toast.error('Errore invio barcode');
+    } finally {
+      setResendDialogOpen(false);
+      setUserToResend(null);
+    }
+  };
+
   const handelGetEan = async () => {
     try {
       const data = await getNewEan();
@@ -147,31 +170,6 @@ export default function UsersPage() {
 
   return (
     <main style={{ padding: '2rem' }}>
-      {/*<h1>Utenti</h1>*/}
-
-      {/*<section style={{ marginBottom: '2rem' }}>*/}
-      {/*  <h2>Nuovo utente</h2>*/}
-      {/*  <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>*/}
-      {/*    <input*/}
-      {/*      name="barcode"*/}
-      {/*      placeholder="Barcode (13 cifre)"*/}
-      {/*      value={form.barcode}*/}
-      {/*      onChange={handleChange}*/}
-      {/*    />*/}
-      {/*    <input name="nome" placeholder="Nome" value={form.nome} onChange={handleChange} />*/}
-      {/*    <input*/}
-      {/*      name="cognome"*/}
-      {/*      placeholder="Cognome"*/}
-      {/*      value={form.cognome}*/}
-      {/*      onChange={handleChange}*/}
-      {/*    />*/}
-      {/*    <button type="submit" disabled={saving}>*/}
-      {/*      {saving ? 'Salvataggio...' : 'Salva'}*/}
-      {/*    </button>*/}
-      {/*  </form>*/}
-      {/*  {error && <p style={{ color: 'red', marginTop: '0.5rem' }}>{error}</p>}*/}
-      {/*</section>*/}
-
       <FieldGroup style={{ marginTop: '20px', marginBottom: '60px' }}>
         <FieldSet>
           <FieldLegend>Nuovo Dipendente</FieldLegend>
@@ -206,6 +204,10 @@ export default function UsersPage() {
                       value={form.cognome}
                       onChange={handleChange}
                     />
+                  </div>
+                  <div className="grid gap-3">
+                    <Label htmlFor="email-1">Email</Label>
+                    <Input id="email-1" name="email" value={form.email} onChange={handleChange} />
                   </div>
                   <div className="grid gap-3">
                     <Label htmlFor="barcode-1">Barcode</Label>
@@ -248,6 +250,7 @@ export default function UsersPage() {
                       <TableHead>Nome</TableHead>
                       <TableHead>Cognome</TableHead>
                       <TableHead>Azioni</TableHead>
+                      <TableHead>X</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -257,7 +260,12 @@ export default function UsersPage() {
                         <TableCell>{u.nome}</TableCell>
                         <TableCell>{u.cognome}</TableCell>
                         <TableCell>
-                          <Button onClick={() => handleDelete(u.barcode)}>Elimina</Button>
+                          <Button onClick={() => handleResend(u)}>Rimanda Barcode</Button>
+                        </TableCell>
+                        <TableCell>
+                          <Button variant="destructive" onClick={() => handleDelete(u.barcode)}>
+                            Elimina
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -285,6 +293,27 @@ export default function UsersPage() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Elimina
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={resendDialogOpen} onOpenChange={setResendDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Conferma invio</AlertDialogTitle>
+            <AlertDialogDescription>
+              Sei sicuro di voler rimandare il barcode <strong>{userToResend?.barcode}</strong> a{' '}
+              <strong>{userToResend?.email}</strong>?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmResend}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Invia
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
